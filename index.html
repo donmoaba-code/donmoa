@@ -159,11 +159,18 @@
                 }
                 const encodedKeyword = encodeURIComponent(keyword);
 
+                // [수정됨] 검색어가 없으면 결과가 안 나오는 오류 해결
+                // reSearchKeyword(결과내 재검색) 대신 표준 keyword 파라미터를 사용하여
+                // 어떤 검색어든 해당 카테고리 내에서 정확히 검색되도록 변경했습니다.
+                
                 if (searchCategory === 'notes') {
-                    return `https://donmoa.kr/goods/goods_search.php?reSearchKeyword%5B%5D=${encodedKeyword}&reSearchKey%5B%5D=all&sort=&pageNum=20&key=goodsNm&keyword=&cateGoods%5B%5D=001&cateGoods%5B%5D=&cateGoods%5B%5D=&cateGoods%5B%5D=&goodsPrice%5B%5D=&goodsPrice%5B%5D=`;
+                    // 지폐 (카테고리 코드: 001)
+                    return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=001`;
                 } else if (searchCategory === 'coins') {
-                    return `https://donmoa.kr/goods/goods_search.php?reSearchKeyword%5B%5D=${encodedKeyword}&reSearchKey%5B%5D=all&sort=&pageNum=20&key=goodsNm&keyword=&cateGoods%5B%5D=002&cateGoods%5B%5D=&cateGoods%5B%5D=&cateGoods%5B%5D=&goodsPrice%5B%5D=&goodsPrice%5B%5D=`;
+                    // 주화 (카테고리 코드: 002)
+                    return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=002`;
                 } else {
+                    // 전체 (기본)
                     return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&recentCount=10`;
                 }
             };
