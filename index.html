@@ -97,10 +97,9 @@
                     }
                 };
 
-                if (window.innerWidth < 768) {
-                    setIsSidebarOpen(false);
-                }
-
+                // [수정됨] 모바일 초기 접속 시 사이드바를 강제로 닫는 로직 제거
+                // 이제 모바일에서도 useState(true) 초기값에 따라 검색창이 열린 상태로 시작합니다.
+                
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
