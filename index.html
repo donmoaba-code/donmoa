@@ -137,32 +137,57 @@
                 return result;
             }, [countries, searchTerm, lang]);
 
-            // 검색 조건이 바뀔 때마다 스크롤을 맨 위로 초기화
             useEffect(() => {
                 if (listRef.current) {
                     listRef.current.scrollTop = 0;
                 }
             }, [searchTerm, lang]);
 
-            // URL 생성 함수 (수정됨: 모든 카테고리에서 keyword 파라미터 사용)
+            // [수정됨] URL 생성 함수
+            // '전체': keyword=검색어
+            // '지폐/주화': reSearchKeyword[]=검색어 & cateGoods[]=코드 (국내/해외 구분 적용)
             const getSearchUrl = (target) => {
                 let keyword = '';
+                let isDomestic = false; // 국내 여부 확인
+
+                // 1. 키워드 추출 및 국내/해외 판별
                 if (target && typeof target === 'object' && target.ko) {
                     keyword = target.ko;
+                    // 목록에서 선택된 국가가 한국 관련이면 국내로 설정
+                    if (["대한민국", "조선은행", "한국은행"].includes(target.ko)) {
+                        isDomestic = true;
+                    }
                 } else if (typeof target === 'string') {
                     keyword = target.trim().replace(/[\s\t]+/g, '%');
+                    // 직접 입력 검색어에 국내 관련 단어가 포함되면 국내로 간주
+                    const domesticKeywords = ["대한민국", "한국", "조선", "환", "원", "엽전", "별전"];
+                    if (domesticKeywords.some(k => keyword.includes(k))) {
+                        isDomestic = true;
+                    }
                 }
                 const encodedKeyword = encodeURIComponent(keyword);
 
-                if (searchCategory === 'notes') {
-                    // 지폐 (카테고리 코드: 001) - 표준 검색 쿼리 사용
-                    return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=001`;
-                } else if (searchCategory === 'coins') {
-                    // 주화 (카테고리 코드: 002) - 표준 검색 쿼리 사용
-                    return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=002`;
-                } else {
-                    // 전체 (기본)
+                // 2. 카테고리별 URL 생성
+                if (searchCategory === 'all') {
+                    // 전체: 표준 검색 (keyword 파라미터)
                     return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&recentCount=10`;
+                } else {
+                    // 지폐 또는 주화: 상세 검색 (reSearchKeyword 파라미터)
+                    // 국내/해외 여부에 따라 카테고리 코드(cateGoods) 분기
+                    let cateCode = '';
+
+                    if (searchCategory === 'notes') { // 지폐
+                        // 국내 지폐: 003(추정/통상) 또는 사용자 로직상 004가 아님. 
+                        // 하지만 사용자 요청은 "해외는 001"이므로, 
+                        // 해외 지폐=001, 국내 지폐=003(국내주화가 004이므로 짝을 맞춤)으로 설정
+                        cateCode = isDomestic ? '003' : '001'; 
+                    } else if (searchCategory === 'coins') { // 주화
+                        // 국내 주화: 004 (사용자 '십환' 사례 확인)
+                        // 해외 주화: 002 (통상적인 짝)
+                        cateCode = isDomestic ? '004' : '002';
+                    }
+
+                    return `https://donmoa.kr/goods/goods_search.php?reSearchKeyword%5B%5D=${encodedKeyword}&reSearchKey%5B%5D=all&sort=&pageNum=20&key=goodsNm&keyword=&cateGoods%5B%5D=${cateCode}`;
                 }
             };
 
@@ -197,7 +222,6 @@
                     {/* --- Sidebar --- */}
                     <aside 
                         className={`bg-white shadow-2xl flex flex-col border-r border-gray-200 transition-all duration-300 z-20 absolute md:relative h-full ${
-                            // 모바일에서는 화면 전체 너비(w-full)를 차지하도록 하여 PC처럼 전체 화면으로 보이게 함
                             isSidebarOpen ? 'w-full md:w-80 translate-x-0' : 'w-full md:w-80 -translate-x-full md:w-0 md:translate-x-0 md:overflow-hidden'
                         }`}
                     >
@@ -210,7 +234,6 @@
                                 </h1>
                             </div>
                             <div className="flex items-center space-x-2">
-                                {/* 전체 초기화 버튼 */}
                                 <button 
                                     onClick={resetAll} 
                                     className="p-1.5 hover:bg-donmoa-dark rounded-full text-gray-300 hover:text-white transition-colors"
@@ -254,7 +277,6 @@
                                 <div className="absolute left-3 top-3.5 text-gray-400">
                                     <SearchIcon size={18} />
                                 </div>
-                                {/* 검색어 삭제(X) 버튼 */}
                                 {searchTerm && (
                                     <button 
                                         onClick={clearSearchTerm}
