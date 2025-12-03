@@ -92,16 +92,11 @@
 
             useEffect(() => {
                 const handleResize = () => {
-                    // PC 화면(768px 이상)으로 커지면 사이드바를 강제로 엽니다.
-                    // 모바일에서는 키보드가 올라오면서 화면 크기가 바뀔 수 있으므로
-                    // 강제로 닫는 로직(else { setIsSidebarOpen(false) })을 제거하여
-                    // 입력 중에 사이드바가 사라지는 오류를 해결했습니다.
                     if (window.innerWidth >= 768) {
                         setIsSidebarOpen(true);
                     }
                 };
 
-                // 초기 로딩 시에만 모바일인지 확인하여 닫아둡니다.
                 if (window.innerWidth < 768) {
                     setIsSidebarOpen(false);
                 }
@@ -149,7 +144,7 @@
                 }
             }, [searchTerm, lang]);
 
-            // URL 생성 함수
+            // URL 생성 함수 (수정됨: 모든 카테고리에서 keyword 파라미터 사용)
             const getSearchUrl = (target) => {
                 let keyword = '';
                 if (target && typeof target === 'object' && target.ko) {
@@ -159,15 +154,11 @@
                 }
                 const encodedKeyword = encodeURIComponent(keyword);
 
-                // [수정됨] 검색어가 없으면 결과가 안 나오는 오류 해결
-                // reSearchKeyword(결과내 재검색) 대신 표준 keyword 파라미터를 사용하여
-                // 어떤 검색어든 해당 카테고리 내에서 정확히 검색되도록 변경했습니다.
-                
                 if (searchCategory === 'notes') {
-                    // 지폐 (카테고리 코드: 001)
+                    // 지폐 (카테고리 코드: 001) - 표준 검색 쿼리 사용
                     return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=001`;
                 } else if (searchCategory === 'coins') {
-                    // 주화 (카테고리 코드: 002)
+                    // 주화 (카테고리 코드: 002) - 표준 검색 쿼리 사용
                     return `https://donmoa.kr/goods/goods_search.php?keyword=${encodedKeyword}&cateGoods%5B%5D=002`;
                 } else {
                     // 전체 (기본)
@@ -206,7 +197,6 @@
                     {/* --- Sidebar --- */}
                     <aside 
                         className={`bg-white shadow-2xl flex flex-col border-r border-gray-200 transition-all duration-300 z-20 absolute md:relative h-full ${
-                            // 수정됨: w-80 -> w-full md:w-80
                             // 모바일에서는 화면 전체 너비(w-full)를 차지하도록 하여 PC처럼 전체 화면으로 보이게 함
                             isSidebarOpen ? 'w-full md:w-80 translate-x-0' : 'w-full md:w-80 -translate-x-full md:w-0 md:translate-x-0 md:overflow-hidden'
                         }`}
