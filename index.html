@@ -143,9 +143,7 @@
                 }
             }, [searchTerm, lang]);
 
-            // [수정됨] URL 생성 함수
-            // '전체': keyword=검색어
-            // '지폐/주화': reSearchKeyword[]=검색어 & cateGoods[]=코드 (국내/해외 구분 적용)
+            // URL 생성 함수 (수정됨: 모든 카테고리에서 keyword 파라미터 사용)
             const getSearchUrl = (target) => {
                 let keyword = '';
                 let isDomestic = false; // 국내 여부 확인
@@ -177,13 +175,8 @@
                     let cateCode = '';
 
                     if (searchCategory === 'notes') { // 지폐
-                        // 국내 지폐: 003(추정/통상) 또는 사용자 로직상 004가 아님. 
-                        // 하지만 사용자 요청은 "해외는 001"이므로, 
-                        // 해외 지폐=001, 국내 지폐=003(국내주화가 004이므로 짝을 맞춤)으로 설정
                         cateCode = isDomestic ? '003' : '001'; 
                     } else if (searchCategory === 'coins') { // 주화
-                        // 국내 주화: 004 (사용자 '십환' 사례 확인)
-                        // 해외 주화: 002 (통상적인 짝)
                         cateCode = isDomestic ? '004' : '002';
                     }
 
@@ -213,6 +206,14 @@
                 setSearchTerm('');
                 setSelectedCountry(null);
                 setSearchCategory('all');
+            };
+
+            // 검색어 입력 후 이동 처리 함수
+            const handleSearchSubmit = () => {
+                // 모바일 환경일 때만 사이드바 닫기
+                if (window.innerWidth < 768) {
+                    setIsSidebarOpen(false);
+                }
             };
 
             const displayTarget = selectedCountry ? selectedCountry : (searchTerm ? searchTerm : null);
@@ -273,10 +274,20 @@
                                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-donmoa-orange focus:border-transparent text-sm shadow-sm transition-all"
                                     value={searchTerm}
                                     onChange={handleSearchTermChange}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSearchSubmit();
+                                        }
+                                    }}
                                 />
-                                <div className="absolute left-3 top-3.5 text-gray-400">
+                                {/* 돋보기 아이콘을 버튼으로 변경하여 클릭 시 검색(이동) 기능 추가 */}
+                                <button 
+                                    onClick={handleSearchSubmit}
+                                    className="absolute left-3 top-3.5 text-gray-400 hover:text-donmoa-orange transition-colors"
+                                    title="검색 결과 보기"
+                                >
                                     <SearchIcon size={18} />
-                                </div>
+                                </button>
                                 {searchTerm && (
                                     <button 
                                         onClick={clearSearchTerm}
@@ -317,30 +328,44 @@
                         </div>
 
                         <div className="flex-1 overflow-y-auto" ref={listRef}>
-                            {filteredCountries.length > 0 ? (
-                                <ul className="divide-y divide-gray-100">
-                                    {filteredCountries.map((country) => (
-                                        <li key={country.ko}>
-                                            <button
-                                                onClick={() => handleCountrySelect(country)}
-                                                className={`w-full text-left px-6 py-4 text-sm transition-all duration-200 flex justify-between items-center group ${
-                                                    selectedCountry?.ko === country.ko 
-                                                        ? 'bg-orange-50 text-donmoa-orange font-bold border-l-4 border-donmoa-orange' 
-                                                        : 'text-gray-700 hover:bg-gray-50 hover:text-donmoa-orange hover:pl-7'
-                                                }`}
-                                            >
-                                                <span>{country[lang]}</span>
-                                                {selectedCountry?.ko === country.ko && <ChevronRightIcon size={16} />}
-                                                {selectedCountry?.ko !== country.ko && (
-                                                    <span className="opacity-0 group-hover:opacity-100 text-gray-400">
-                                                        <ChevronRightIcon size={14} />
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
+                            <ul className="divide-y divide-gray-100">
+                                {/* '직접 검색' 버튼: 검색어가 있을 때 목록 최상단에 표시 */}
+                                {searchTerm && (
+                                    <li key="direct-search" className="bg-donmoa-bg/30">
+                                        <button
+                                            onClick={() => {
+                                                if (window.innerWidth < 768) setIsSidebarOpen(false);
+                                            }}
+                                            className="w-full text-left px-6 py-4 text-sm text-donmoa-orange font-bold flex justify-between items-center group hover:bg-gray-50 transition-colors"
+                                        >
+                                            <span className="truncate">'{searchTerm}'(으)로 검색 결과 보기</span>
+                                            <ChevronRightIcon size={16} />
+                                        </button>
+                                    </li>
+                                )}
+
+                                {filteredCountries.map((country) => (
+                                    <li key={country.ko}>
+                                        <button
+                                            onClick={() => handleCountrySelect(country)}
+                                            className={`w-full text-left px-6 py-4 text-sm transition-all duration-200 flex justify-between items-center group ${
+                                                selectedCountry?.ko === country.ko 
+                                                    ? 'bg-orange-50 text-donmoa-orange font-bold border-l-4 border-donmoa-orange' 
+                                                    : 'text-gray-700 hover:bg-gray-50 hover:text-donmoa-orange hover:pl-7'
+                                            }`}
+                                        >
+                                            <span>{country[lang]}</span>
+                                            {selectedCountry?.ko === country.ko && <ChevronRightIcon size={16} />}
+                                            {selectedCountry?.ko !== country.ko && (
+                                                <span className="opacity-0 group-hover:opacity-100 text-gray-400">
+                                                    <ChevronRightIcon size={14} />
+                                                </span>
+                                            )}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                            {!searchTerm && filteredCountries.length === 0 && (
                                 <div className="p-8 text-center text-gray-500 text-sm">
                                     {lang === 'ko' ? '일치하는 국가가 없으면 직접 입력한 검색어로 검색됩니다.' : 'If no country matches, search with your keyword.'}
                                 </div>
